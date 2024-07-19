@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import validates
+import re
 db = SQLAlchemy()
 
 class Author(db.Model):
@@ -12,6 +13,18 @@ class Author(db.Model):
     updated_at = db.Column(db.DateTime, onupdate=db.func.now())
 
     # Add validators 
+    @validates('name')
+    def validate_name(self, key, name):
+        if not name:
+            raise ValueError("Name cannot be empty")
+        
+        
+    @validates('phone_number')
+    def validates_phone_number(self, key, phone_number):
+        if not re.match(r'^\d{10}$', phone_number):
+            raise ValueError("Phone number must be exactly ten digits")
+        return phone_number
+    
 
     def __repr__(self):
         return f'Author(id={self.id}, name={self.name})'
@@ -27,7 +40,33 @@ class Post(db.Model):
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     updated_at = db.Column(db.DateTime, onupdate=db.func.now())
 
-    # Add validators  
+    # Add validators
+    @validates('content')
+    def validates_content(self, key, content):
+        if len(content) < 250:
+            raise ValueError("Post content must be at least 250 characters long")
+        return content
+    
+
+    @validates('summary')
+    def validates_summary(self, key, summary):
+        if len(summary) > 250:
+            raise ValueError("Post summary must be a maximum of 50 characters long")
+        
+    
+    @validates('category')
+    def validates_category(self, key, category):
+        if category not in ['Fiction', 'Non-Fiction']:
+            raise ValueError("Post category must be either 'Fiction' or 'Non-Fiction'")
+        
+    @validates('title')
+    def validates_title(self, key, title):
+        clickbait_phrases = ["Won't Believe", "Secret", "Top", "Guess"]
+        if not any(phrase in title for phrase in clickbait_phrases):
+            raise ValueError("Post title mustcontin one of the following: " + ", ".join(clickbait_phrases))
+        return title
+
+
 
 
     def __repr__(self):
